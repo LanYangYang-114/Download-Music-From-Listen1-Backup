@@ -118,6 +118,7 @@ class DownloadMusic():
             return False
 
         # 用ffmpeg合成音频文件
+
         command = [rf'{self.RunPath}\ffmpeg.exe',
                    '-i', rf'{self.TempPath}\input.mp3',
                    '-i', rf'{self.TempPath}\cover.jpg',
@@ -167,12 +168,23 @@ class DownloadMusic():
         """
         try:
             res = requests.get(url, headers=self.header)
-            if '<!DOCTYPE html>' in str(res.content):
+
+            # 如果下载不到封面图片，使用默认封面避免最终文件损坏
+            if '.jpg' in Output and len(str(res.content)) >= 1:
+                print('下载封面失败，使用默认封面')
+                copyfile(rf'{self.RunPath}\NoImage.jpg',
+                         rf'{self.TempPath}\cover.jpg')
+                return True
+
+            # 如果下载到的是网页内容
+            elif '<!DOCTYPE html>' in str(res.content):
                 print(f"数据获取异常")
                 return False
+            # 写入文件
             with open(Output, 'wb') as f:
                 f.write(res.content)
             return True
+
         except Exception as e:
             print(f'出现错误：{e}')
             return False
@@ -245,7 +257,7 @@ def Main(file: str = 'listen1_backup.json', OutputPath: str = 'output') -> None:
     print("歌曲下载完毕")
     print(f"共{len(SelectPlaylistData)}首歌，{Done}首下载成功，{Fail}首下载失败")
     # 清理temp目录
-    rmtree(D.TempPath)
+    # rmtree(D.TempPath)
 
 
 if __name__ == '__main__':
